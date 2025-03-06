@@ -6,7 +6,8 @@ export class ApiService {
   //authentication method: it sets the token in the header
   private authToken: string | null = null;
   setAuthToken(token: string) { this.authToken = token;}
-  
+  private baseURL: string;
+  private defaultHeaders: HeadersInit;
   private getHeaders(): HeadersInit {
     const headers: Record<string, string> = {
       "Content-Type": "application/json"
@@ -18,8 +19,7 @@ export class ApiService {
     }
     return headers;
   }
-  private baseURL: string;
-  private defaultHeaders: HeadersInit;
+
 
   constructor() {
     this.baseURL = getApiDomain();
@@ -98,7 +98,7 @@ export class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const res = await fetch(url, {
       method: "POST",
-      headers: this.defaultHeaders,
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
     return this.processResponse<T>(
@@ -117,7 +117,7 @@ export class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const res = await fetch(url, {
       method: "PUT",
-      headers: this.defaultHeaders,
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
     return this.processResponse<T>(
@@ -135,7 +135,7 @@ export class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const res = await fetch(url, {
       method: "DELETE",
-      headers: this.defaultHeaders,
+      headers: this.getHeaders(),
     });
     return this.processResponse<T>(
       res,
