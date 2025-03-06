@@ -64,7 +64,25 @@ a {
 .register-button {
   width: 100%;
 }
+.register-link {
+  text-align: center;
+  margin-top: 12px;
+  display: block;
 
+}
+
+
+.user-info-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: rgb(41, 44, 59);
+}
+
+.user-info-button {
+  width: 100%;
+}
 .card-container {
   display: flex;
   justify-content: center;

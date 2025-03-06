@@ -3,6 +3,7 @@ import { ApplicationError } from "@/types/error";
 
 export class ApiService {
 
+  
   //authentication method: it sets the token in the header
   private authToken: string | null = null;
   setAuthToken(token: string) { this.authToken = token;}
@@ -81,6 +82,7 @@ export class ApiService {
     const res = await fetch(url, {
       method: "GET",
       headers: this.getHeaders(),
+      // credentials: "include", 
     });
     return this.processResponse<T>(
       res,
@@ -100,6 +102,7 @@ export class ApiService {
       method: "POST",
       headers: this.getHeaders(),
       body: JSON.stringify(data),
+      // credentials: "include", 
     });
     return this.processResponse<T>(
       res,
@@ -119,6 +122,7 @@ export class ApiService {
       method: "PUT",
       headers: this.getHeaders(),
       body: JSON.stringify(data),
+      // credentials: "include", 
     });
     return this.processResponse<T>(
       res,
@@ -136,6 +140,7 @@ export class ApiService {
     const res = await fetch(url, {
       method: "DELETE",
       headers: this.getHeaders(),
+      // credentials: "include", 
     });
     return this.processResponse<T>(
       res,
