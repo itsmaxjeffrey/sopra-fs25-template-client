@@ -10,122 +10,70 @@
 
 import '@ant-design/v5-patch-for-react-19';
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 
-import { Button, Card, Table } from "antd";
+import { Button, Card, DatePicker, Form, Input, message, Table } from "antd";
 import type { TableProps } from "antd"; // antd component library allows imports of types
 // Optionally, you can import a CSS module or file for additional styling:
-// import "@/styles/views/Dashboard.scss";
-
-const columns: TableProps<User>["columns"] = [
-  {
-    title: "Id",
-    dataIndex: "id",
-    key: "id",
-  },
-  
-  {
-    title: "Username",
-    dataIndex: "username",
-    key: "username",
-  },
-  {
-    title: "Creation Date",
-    key: "creationDate",
-    render: (_, user) => {  // Use render to format the date
-      if (!user.creationDate){return null}
-      const creationDate = new Date(user.creationDate);
-      
-      // Choose ONE of these formatting options:
-      
-      // Option 1: Native JavaScript (no libraries)
-      const formattedDate = creationDate.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-
-      // Option 2: Using date-fns (install first: npm install date-fns)
-      // import { format } from 'date-fns';
-      // const formattedDate = format(creationDate, 'MMMM d, yyyy h:mm a');
-
-      return formattedDate;
-    }
-  },
-
-  {
-    title: "Birthday",
-    key: "birthday",
-    render: (_, user) => {  // Use render to format the date
-      if (!user.birthday){return null}
-      const birthday = new Date(user.birthday);
-      
-      // Choose ONE of these formatting options:
-      
-      // Option 1: Native JavaScript (no libraries)
-      const formattedDate = birthday.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-
-      // Option 2: Using date-fns (install first: npm install date-fns)
-      // import { format } from 'date-fns';
-      // const formattedDate = format(creationDate, 'MMMM d, yyyy h:mm a');
-
-      return formattedDate;
-    }
-  },
-  {
-    title: "Status",
-    dataIndex: "status",
-    key: "status",
-  },
-
-];
 
 
 const Profile: React.FC = () => {
     const router = useRouter();
     const apiService = useApi();
-    const [users, setUsers] = useState<User[] | null>(null);
+    const params = useParams();
+    const [user, setUser] = useState<User | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [form] = Form.useForm();
+    const [loading, setLoading] = useState(true);
+    const [isLoading,setIsLoading]= useState(false);
+
+    const [saving, setSaving] = useState(false);
+
+
+
+
     // useLocalStorage hook example use
-    const { value: id, set: setId, clear: clearId } = useLocalStorage<number | null>("id", null);
-    
+    const { value: storedId } = useLocalStorage<number | null>("id", null);
+    const { clear: clearToken } = useLocalStorage<string>("token", "");
+    const { clear: clearId } = useLocalStorage<number | null>("id", null);    
+    const isCurrentUser = storedId?.toString() === params.id;
     const {
-      value: token, // is commented out because we dont need to know the token value for logout
-      // set: setToken, // is commented out because we dont need to set or update the token value
-      clear: clearToken, // all we need in this scenario is a method to clear the token
-    } = useLocalStorage<string>("token", ""); // if you wanted to select a different token, i.e "lobby", useLocalStorage<string>("lobby", "");
-  
+        value: token, // is commented out because we dont need to know the token value for logout
+        // set: setToken, // is commented out because we dont need to set or update the token value
+        // clear: clearToken, // all we need in this scenario is a method to clear the token
+      } = useLocalStorage<string>("token", ""); // if you wanted to select a different token, i.e "lobby", useLocalStorage<string>("lobby", "");
+
     
+    const formatBirthday = (dateString: string) => {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+      });
+    };
   const handleLogout = async (): Promise<void> => {
     try {
-      if (id) {
+      if (storedId) {
         
         
         // Make the logout request to change status on server
         const response = await apiService.post(`/users/${id}/logout`, {});
-        console.log("Logout response:", response);
+        // console.log("Logout response:", response);
         
         // Don't need to refresh users as we're redirecting immediately
         // Just clear tokens and redirect
         clearToken();
         clearId();
-        console.log("Local storage cleared");
+        // console.log("Local storage cleared");
         router.push("/login");
       } else {
-        console.log("Logging out user with ID:", id);
-        console.log("Current token:", token);
+        // console.log("Logging out user with ID:", id);
+        // console.log("Current token:", token);
         console.warn("No user ID available for proper logout");
         // Still redirect to login if id is not available
         router.push("/login");
@@ -140,14 +88,15 @@ const Profile: React.FC = () => {
   };
 
 
+
     useEffect(() => {
       if (token){
         apiService.setAuthToken(token);
         setIsLoading(false);
       }
-    },[token, apiService, id])
+    },[token, apiService, storedId])
   
-    const fetchUsers = async () => {
+    const fetchUser = async () => {
       if (isLoading || !token) {
         apiService.setAuthToken(token) 
         return;
@@ -155,45 +104,63 @@ const Profile: React.FC = () => {
       try {
         // apiService.get<User[]> returns the parsed JSON object directly,
         // thus we can simply assign it to our users variable.
-        const users: User[] = await apiService.get<User[]>("/users");
-        setUsers(users);
-        console.log("Fetched users:", users);
+        setLoading(true);
+        const data = await apiService.get<User>("/users/${params.id}");
+        setUser(data);
+        // console.log("Fetched users:", users);
       } catch (error) {
         if (error instanceof Error) {
-          alert(`Something went wrong while fetching users:\n${error.message}`);
+          alert(`Something went wrong while fetching user:\n${error.message}`);
           // console.log("Current token:", token);
         } else {
-          console.error("An unknown error occurred while fetching users.");
+          console.error("An unknown error occurred while fetching user.");
           // console.log("Current token:", token);
         }
+      } 
+      finally{
+        setLoading(true);
       }
     };
 
+    const handleEdit = () => {
+      setIsEditing(true);
 
-  return (
-    <div className="card-container">
-      <Card
-        title="Get all users from secure endpoint:"
-        loading={!users}
-        className="dashboard-container"
-      >
-        {users && (
-          <>
-            <Table<User>
-              columns={columns}
-            />
-            <Button onClick={handleLogout} type="primary">
-              Logout
-            </Button>
-            <Button onClick={handleUpdateUser} type="primary">
-              Edit Profile
-            </Button>
-          </>
-        )}
-      </Card>
-    </div>
-  );
+      form.setFieldsValue({
+        username:user?.username,
+        birthday: user?.birthday ? dayjs(user.birthday) : null,
+      })
+    }
+    
+    const handleCancel = () => {
+      setIsEditing(false);
+      form.resetFields();
+    } 
+
+    const handleSave = async (values: {
+      username: string;
+      birthday: Date;
+    }) => {
+      try {
+        setSaving(true);
+    
+
+        await apiService.put('/users/${id}', values);
+        await fetchUser();
+        setIsEditing(false);
+        message.success("Profile updated successfully");
+      } catch (error) {
+        console.error("Failed to update user:", error);
+        message.error("Failed to update profile");
+      } finally {
+        setSaving(false);
+      }
+    };
+
   
 };
 
 export default Profile;
+function dayjs(birthday: Date) {
+  throw new Error('Function not implemented.');
+}
+
