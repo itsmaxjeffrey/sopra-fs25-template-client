@@ -38,6 +38,17 @@ interface UserProfileFormValues {
   birthday?: dayjs.Dayjs | null;
 }
 
+// Custom styles
+const pageStyles = {
+  color: 'white',
+};
+
+const datePickerStyles = {
+  input: { color: 'white' },
+  // Override the dropdown panel colors to be black
+  dropdownClassName: 'black-text-calendar',
+};
+
 const UserProfile: React.FC = () => {
   const { message } = App.useApp();
   const params = useParams();
@@ -62,6 +73,27 @@ const UserProfile: React.FC = () => {
   } = useLocalStorage<number | null>("storedId", null);
 
   const isOwnProfile = storedId !== null && storedId.toString() === userId;
+
+  // Add global styles for the calendar dropdown
+  useEffect(() => {
+    // Add styles for the DatePicker dropdown to ensure text is black
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = `
+      .black-text-calendar .ant-picker-content,
+      .black-text-calendar .ant-picker-header-view,
+      .black-text-calendar .ant-picker-cell-in-view,
+      .black-text-calendar .ant-picker-header button,
+      .black-text-calendar .ant-picker-time-panel-column > li,
+      .black-text-calendar .ant-picker-cell {
+        color: rgba(0, 0, 0, 0.88) !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -182,6 +214,7 @@ const UserProfile: React.FC = () => {
           justifyContent: "center",
           alignItems: "center",
           height: "80vh",
+          color: "white",
         }}
       >
         <Spin size="large" />
@@ -191,7 +224,7 @@ const UserProfile: React.FC = () => {
 
   if (!user) {
     return (
-      <div style={{ textAlign: "center", margin: "50px" }}>
+      <div style={{ textAlign: "center", margin: "50px", color: "white" }}>
         <Title level={4} style={{ color: "white" }}>
           User not found
         </Title>
@@ -201,103 +234,119 @@ const UserProfile: React.FC = () => {
   }
 
   return (
-    <Card
-      title={
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Title level={4} style={{ color: "white" }}>
-            {user.username}'s Profile
-          </Title>
-          {mounted && (
-            <Typography.Text style={{ fontSize: "14px", color: "white" }}>
-              Current time: {currentTime}
-            </Typography.Text>
-          )}
-        </div>
-      }
-      style={{ maxWidth: 800, margin: "20px auto" }}
-    >
-      {isEditing ? (
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="Username"
-            name="username"
-            rules={[{ required: true, message: "Please enter a username" }]}
-          >
-            <Input prefix={<UserOutlined />} />
-          </Form.Item>
-
-          <Form.Item label="Birthday" name="birthday">
-            <DatePicker style={{ width: "100%" }} placeholder="Select your birthday" />
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button type="primary" onClick={handleSaveProfile}>
-                Save
-              </Button>
-              <Button onClick={handleToggleEdit}>Cancel</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      ) : (
-        <>
-          <Descriptions
-            bordered
-            column={1}
-            styles={{
-              label: {
-                fontWeight: "bold",
-                width: "150px",
-                textAlign: "right",
-                paddingRight: "20px",
-                color: "white",
-              },
-              content: {
-                color: "white",
-              },
-            }}
-          >
-            <Descriptions.Item label="ID">{user.id}</Descriptions.Item>
-            <Descriptions.Item label="Username">
-              <Space>
-                <UserOutlined />
-                {user.username}
-              </Space>
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">{user.status}</Descriptions.Item>
-            <Descriptions.Item label="Birthday">
-              <Space>
-                <CalendarOutlined />
-                {user.birthday ? dayjs(user.birthday).format("MMMM D, YYYY") : "Not specified"}
-              </Space>
-            </Descriptions.Item>
-            <Descriptions.Item label="Registered on">
-              <Space>
-                <ClockCircleOutlined />
-                {user.creationDate
-                  ? dayjs(user.creationDate).format("MMMM D, YYYY h:mm A")
-                  : "Unknown"}
-              </Space>
-            </Descriptions.Item>
-          </Descriptions>
-
-          <div style={{ marginTop: 16, textAlign: "right" }}>
-            <Space>
-              {isOwnProfile && (
-                <>
-                  <Button type="primary" icon={<EditOutlined />} onClick={handleToggleEdit}>
-                    Edit Profile
-                  </Button>
-                  <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
-                    Logout
-                  </Button>
-                </>
-              )}
-            </Space>
+    <div style={pageStyles}>
+      <Card
+        title={
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Title level={4} style={{ color: "white", margin: 0 }}>
+              {user.username}'s Profile
+            </Title>
+            {mounted && (
+              <Typography.Text style={{ fontSize: "14px", color: "white" }}>
+                Current time: {currentTime}
+              </Typography.Text>
+            )}
           </div>
-        </>
-      )}
-    </Card>
+        }
+        style={{ maxWidth: 800, margin: "20px auto" }}
+        styles={{
+          body: { color: 'white' },
+          header: { color: 'white' }
+        }}
+      >
+        {isEditing ? (
+          <Form form={form} layout="vertical" style={{ color: 'white' }}>
+            <Form.Item
+              label={<span style={{ color: 'white' }}>Username</span>}
+              name="username"
+              rules={[{ required: true, message: "Please enter a username" }]}
+            >
+              <Input 
+                prefix={<UserOutlined />} 
+                style={{ color: 'white' }} 
+              />
+            </Form.Item>
+
+            <Form.Item 
+              label={<span style={{ color: 'white' }}>Birthday</span>} 
+              name="birthday"
+            >
+              <DatePicker 
+                style={{ width: "100%", color: 'white' }} 
+                placeholder="Select your birthday"
+                popupClassName="black-text-calendar"
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Space>
+                <Button type="primary" onClick={handleSaveProfile}>
+                  Save
+                </Button>
+                <Button onClick={handleToggleEdit}>Cancel</Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        ) : (
+          <>
+            <Descriptions
+              bordered
+              column={1}
+              styles={{
+                label: {
+                  fontWeight: "bold",
+                  width: "150px",
+                  textAlign: "right",
+                  paddingRight: "20px",
+                  color: "white",
+                },
+                content: {
+                  color: "white",
+                },
+              }}
+            >
+              <Descriptions.Item label="ID">{user.id}</Descriptions.Item>
+              <Descriptions.Item label="Username">
+                <Space>
+                  <UserOutlined />
+                  {user.username}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="Status">{user.status}</Descriptions.Item>
+              <Descriptions.Item label="Birthday">
+                <Space>
+                  <CalendarOutlined />
+                  {user.birthday ? dayjs(user.birthday).format("MMMM D, YYYY") : "Not specified"}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="Registered on">
+                <Space>
+                  <ClockCircleOutlined />
+                  {user.creationDate
+                    ? dayjs(user.creationDate).format("MMMM D, YYYY h:mm A")
+                    : "Unknown"}
+                </Space>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <div style={{ marginTop: 16, textAlign: "right" }}>
+              <Space>
+                {isOwnProfile && (
+                  <>
+                    <Button type="primary" icon={<EditOutlined />} onClick={handleToggleEdit}>
+                      Edit Profile
+                    </Button>
+                    <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
+                      Logout
+                    </Button>
+                  </>
+                )}
+              </Space>
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
   );
 };
 
