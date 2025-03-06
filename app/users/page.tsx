@@ -15,20 +15,22 @@ import type { TableProps } from "antd"; // antd component library allows imports
 // Columns for the antd table of User objects
 const columns: TableProps<User>["columns"] = [
   {
+    title: "Id",
+    dataIndex: "id",
+    key: "id",
+  },
+  
+  {
     title: "Username",
     dataIndex: "username",
     key: "username",
   },
   {
-    title: "Name",
-    dataIndex: "name",
-    key: "name",
+    title: "Creation Date",
+    dataIndex: "creationDate",
+    key: "creationDate",
   },
-  {
-    title: "Id",
-    dataIndex: "id",
-    key: "id",
-  },
+
 ];
 
 const Dashboard: React.FC = () => {

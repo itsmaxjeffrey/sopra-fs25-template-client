@@ -2,6 +2,22 @@ import { getApiDomain } from "@/utils/domain";
 import { ApplicationError } from "@/types/error";
 
 export class ApiService {
+
+  //authentication method: it sets the token in the header
+  private authToken: string | null = null;
+  setAuthToken(token: string) { this.authToken = token;}
+  
+  private getHeaders(): HeadersInit {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+
+    
+    if (this.authToken){
+      headers["Authorization"] = this.authToken;
+    }
+    return headers;
+  }
   private baseURL: string;
   private defaultHeaders: HeadersInit;
 
@@ -64,7 +80,7 @@ export class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const res = await fetch(url, {
       method: "GET",
-      headers: this.defaultHeaders,
+      headers: this.getHeaders(),
     });
     return this.processResponse<T>(
       res,
