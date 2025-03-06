@@ -1,9 +1,10 @@
+import dayjs from "dayjs";
+
 export interface User {
-  id: number | null;
-  password: string | null;
-  username: string | null;
-  token: string | null;
-  status: string | null;
-  creationDate: Date | null;
-  birthday: Date | null;
-}
+id?: number;
+password?: string;
+username?: string;
+token?: string;
+status?: string;
+creationDate?: Date;
+birthday?: dayjs.Dayjs | null;}

@@ -28,8 +28,8 @@ const Login: React.FC = () => {
   } = useLocalStorage<string>("token", ""); // note that the key we are selecting is "token" and the default value we are setting is an empty string
   // if you want to pick a different token, i.e "usertoken", the line above would look as follows: } = useLocalStorage<string>("usertoken", "");
   const {
-    set: setId,
-  } = useLocalStorage<number | null>("id", null);
+    set: setStoredId,
+  } = useLocalStorage<number | null>("storedId", null);
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -40,8 +40,8 @@ const Login: React.FC = () => {
       console.log("Login response:", response);
       if (response.token) {
         setToken(response.token);
-        console.log("Setting id to:", response.id);
-        setId(response.id);
+        // console.log("Setting id to:", response.id);
+        setStoredId(response.id);
       }
 
       // Navigate to the user overview

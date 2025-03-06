@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
   const apiService = useApi();
   const [users, setUsers] = useState<User[] | null>(null);
   // useLocalStorage hook example use
-  const { value: id, set: setId, clear: clearId } = useLocalStorage<number | null>("id", null);
+  const { value: storedId, clear: clearStoredId } = useLocalStorage<number | null>("storedId", null);
   const [isLoading, setIsLoading] = useState(true);
 
   // The hook returns an object with the value and two functions
@@ -78,21 +78,21 @@ const Dashboard: React.FC = () => {
 
   const handleLogout = async (): Promise<void> => {
     try {
-      if (id) {
+      if (storedId) {
         
         
         // Make the logout request to change status on server
-        const response = await apiService.post(`/users/${id}/logout`, {});
+        const response = await apiService.post(`/users/${storedId}/logout`, {});
         console.log("Logout response:", response);
         
         // Don't need to refresh users as we're redirecting immediately
         // Just clear tokens and redirect
         clearToken();
-        clearId();
+        clearStoredId();
         console.log("Local storage cleared");
         router.push("/login");
       } else {
-        console.log("Logging out user with ID:", id);
+        console.log("Logging out user with ID:", storedId);
         console.log("Current token:", token);
         console.warn("No user ID available for proper logout");
         // Still redirect to login if id is not available
@@ -102,18 +102,18 @@ const Dashboard: React.FC = () => {
       console.error("Error during logout:", error);
       // If there's an error, still redirect to login
       clearToken();
-      clearId();
+      clearStoredId();
       router.push("/login");
     }
   };
 
   useEffect(() => {
-    console.log("Initial id from localStorage:", id);
+    console.log("Initial id from localStorage:", storedId);
     if (token){
       apiService.setAuthToken(token);
       setIsLoading(false);
     }
-  },[token, apiService, id])
+  },[token, apiService, storedId])
 
   const fetchUsers = async () => {
     if (isLoading || !token) {
