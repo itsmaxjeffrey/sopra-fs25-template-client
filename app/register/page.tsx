@@ -39,7 +39,7 @@ const Register: React.FC = () => {
       // Use the useLocalStorage hook that returned a setter function (setToken in line 41) to store the token if available
       if (response.token) {
         setToken(response.token);
-        setStoredId(response.id);
+        setStoredId(response.id ?? null);
       }
 
       // Navigate to the user overview
@@ -68,7 +68,7 @@ const Register: React.FC = () => {
           label="Username"
           rules={[{ required: true, message: "Please input your username!" }]}
         >
-          <Input placeholder="Enter password" />
+          <Input placeholder="Enter username" />
         </Form.Item>
         <Form.Item
           name="password"
@@ -83,11 +83,11 @@ const Register: React.FC = () => {
           </Button>
         </Form.Item>
         <Typography.Paragraph className="register-link">
-        Already have an account?{" "}
-        <Typography.Link onClick={() => router.push("/login")}>
-          Login
-        </Typography.Link>
-      </Typography.Paragraph>
+          Already have an account?{" "}
+          <Typography.Link onClick={() => router.push("/login")}>
+            Login
+          </Typography.Link>
+        </Typography.Paragraph>
       </Form>
     </div>
   );

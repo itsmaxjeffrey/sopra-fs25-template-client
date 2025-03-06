@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
@@ -40,13 +40,7 @@ interface UserProfileFormValues {
 
 // Custom styles
 const pageStyles = {
-  color: 'white',
-};
-
-const datePickerStyles = {
-  input: { color: 'white' },
-  // Override the dropdown panel colors to be black
-  dropdownClassName: 'black-text-calendar',
+  color: "white",
 };
 
 const UserProfile: React.FC = () => {
@@ -76,8 +70,7 @@ const UserProfile: React.FC = () => {
 
   // Add global styles for the calendar dropdown
   useEffect(() => {
-    // Add styles for the DatePicker dropdown to ensure text is black
-    const styleElement = document.createElement('style');
+    const styleElement = document.createElement("style");
     styleElement.innerHTML = `
       .black-text-calendar .ant-picker-content,
       .black-text-calendar .ant-picker-header-view,
@@ -89,7 +82,7 @@ const UserProfile: React.FC = () => {
       }
     `;
     document.head.appendChild(styleElement);
-    
+
     return () => {
       document.head.removeChild(styleElement);
     };
@@ -109,6 +102,21 @@ const UserProfile: React.FC = () => {
     return () => clearInterval(timer);
   }, [mounted]);
 
+  const fetchUserData = useCallback(async () => {
+    try {
+      const userData = await apiService.get<User>(`/users/${userId}`);
+      setUser(userData);
+    } catch (error) {
+      message.error(
+        error instanceof Error
+          ? `Failed to fetch user data: ${error.message}`
+          : "Failed to fetch user data"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiService, userId, message]);
+
   useEffect(() => {
     if (!mounted || typeof window === "undefined") return;
 
@@ -121,29 +129,13 @@ const UserProfile: React.FC = () => {
       try {
         apiService.setAuthToken(token);
         await fetchUserData();
-      } catch (error) {
+      } catch {
         router.push("/login");
       }
     };
 
     checkAuth();
-  }, [token, userId, router, apiService, mounted]);
-
-  const fetchUserData = async () => {
-    try {
-      const userData = await apiService.get<User>(`/users/${userId}`);
-      setUser(userData);
-      // Don't try to set form values here - the form might not be mounted yet
-    } catch (error) {
-      message.error(
-        error instanceof Error
-          ? `Failed to fetch user data: ${error.message}`
-          : "Failed to fetch user data"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [token, userId, router, apiService, mounted, fetchUserData]);
 
   const handleSaveProfile = async () => {
     try {
@@ -152,7 +144,9 @@ const UserProfile: React.FC = () => {
         username: values.username,
       };
       if (values.birthday !== undefined) {
-        updateData.birthday = values.birthday ? values.birthday.format("YYYY-MM-DD") : null;
+        updateData.birthday = values.birthday
+          ? values.birthday.format("YYYY-MM-DD")
+          : null;
       }
 
       await apiService.put(`/users/${userId}`, updateData);
@@ -164,7 +158,9 @@ const UserProfile: React.FC = () => {
           username: values.username,
         };
         if (values.birthday !== undefined) {
-          newUser.birthday = values.birthday ? values.birthday.toDate() : null;
+          newUser.birthday = values.birthday
+            ? values.birthday.format("YYYY-MM-DD")
+            : null;
         }
         return newUser;
       });
@@ -185,7 +181,6 @@ const UserProfile: React.FC = () => {
       form.resetFields();
       setIsEditing(false);
     } else {
-      // Only set form values when we're about to edit
       if (user) {
         form.setFieldsValue({
           username: user.username,
@@ -237,9 +232,15 @@ const UserProfile: React.FC = () => {
     <div style={pageStyles}>
       <Card
         title={
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Title level={4} style={{ color: "white", margin: 0 }}>
-              {user.username}'s Profile
+              {user.username} Profile
             </Title>
             {mounted && (
               <Typography.Text style={{ fontSize: "14px", color: "white" }}>
@@ -250,29 +251,26 @@ const UserProfile: React.FC = () => {
         }
         style={{ maxWidth: 800, margin: "20px auto" }}
         styles={{
-          body: { color: 'white' },
-          header: { color: 'white' }
+          body: { color: "white" },
+          header: { color: "white" },
         }}
       >
         {isEditing ? (
-          <Form form={form} layout="vertical" style={{ color: 'white' }}>
+          <Form form={form} layout="vertical" style={{ color: "white" }}>
             <Form.Item
-              label={<span style={{ color: 'white' }}>Username</span>}
+              label={<span style={{ color: "white" }}>Username</span>}
               name="username"
               rules={[{ required: true, message: "Please enter a username" }]}
             >
-              <Input 
-                prefix={<UserOutlined />} 
-                style={{ color: 'white' }} 
-              />
+              <Input prefix={<UserOutlined />} style={{ color: "white" }} />
             </Form.Item>
 
-            <Form.Item 
-              label={<span style={{ color: 'white' }}>Birthday</span>} 
+            <Form.Item
+              label={<span style={{ color: "white" }}>Birthday</span>}
               name="birthday"
             >
-              <DatePicker 
-                style={{ width: "100%", color: 'white' }} 
+              <DatePicker
+                style={{ width: "100%", color: "white" }}
                 placeholder="Select your birthday"
                 popupClassName="black-text-calendar"
               />
@@ -316,7 +314,9 @@ const UserProfile: React.FC = () => {
               <Descriptions.Item label="Birthday">
                 <Space>
                   <CalendarOutlined />
-                  {user.birthday ? dayjs(user.birthday).format("MMMM D, YYYY") : "Not specified"}
+                  {user.birthday
+                    ? dayjs(user.birthday).format("MMMM D, YYYY")
+                    : "Not specified"}
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="Registered on">
@@ -333,10 +333,18 @@ const UserProfile: React.FC = () => {
               <Space>
                 {isOwnProfile && (
                   <>
-                    <Button type="primary" icon={<EditOutlined />} onClick={handleToggleEdit}>
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={handleToggleEdit}
+                    >
                       Edit Profile
                     </Button>
-                    <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
+                    <Button
+                      danger
+                      icon={<LogoutOutlined />}
+                      onClick={handleLogout}
+                    >
                       Logout
                     </Button>
                   </>

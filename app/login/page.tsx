@@ -18,8 +18,7 @@ const Login: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const [form] = Form.useForm();
-  // useLocalStorage hook example use
-  // The hook returns an object with the value and two functions
+  // useLocalStorage hook example use. The hook returns an object with the value and two functions.
   // Simply choose what you need from the hook:
   const {
     // value: token, // is commented out because we do not need the token value
@@ -36,15 +35,15 @@ const Login: React.FC = () => {
       // Call the API service and let it handle JSON serialization and error handling
       const response = await apiService.post<User>("/login", values);
 
-      // Use the useLocalStorage hook that returned a setter function (setToken in line 41) to store the token if available
+      // Use the useLocalStorage hook that returned a setter function (setToken above) to store the token if available.
       console.log("Login response:", response);
       if (response.token) {
         setToken(response.token);
-        // console.log("Setting id to:", response.id);
-        setStoredId(response.id);
+        // Use the nullish coalescing operator to convert undefined to null if response.id is not defined.
+        setStoredId(response.id ?? null);
       }
 
-      // Navigate to the user overview
+      // Navigate to the user overview.
       router.push("/users");
     } catch (error) {
       if (error instanceof Error) {
@@ -53,7 +52,7 @@ const Login: React.FC = () => {
         console.error("An unknown error occurred during login.");
       }
 
-      //redirect user to register
+      // Redirect user to register.
       router.push("/register");
     }
   };
@@ -73,7 +72,7 @@ const Login: React.FC = () => {
           label="Username"
           rules={[{ required: true, message: "Please input your username!" }]}
         >
-          <Input placeholder="Enter password" />
+          <Input placeholder="Enter username" />
         </Form.Item>
         <Form.Item
           name="password"
@@ -88,15 +87,13 @@ const Login: React.FC = () => {
           </Button>
         </Form.Item>
         <Typography.Paragraph className="register-link">
-        Don’t have an account?{" "}
-        <Typography.Link onClick={() => router.push("/register")}>
-          Register
-        </Typography.Link>
-      </Typography.Paragraph>
+          Don’t have an account?{" "}
+          <Typography.Link onClick={() => router.push("/register")}>
+            Register
+          </Typography.Link>
+        </Typography.Paragraph>
       </Form>
- 
     </div>
-    
   );
 };
 

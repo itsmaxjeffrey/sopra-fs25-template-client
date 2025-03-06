@@ -2,7 +2,7 @@
 // clicking on a user in this list will display /app/users/[id]/page.tsx
 "use client"; // For components that need React hooks and browser APIs, SSR (server side rendering) has to be disabled. Read more here: https://nextjs.org/docs/pages/building-your-application/rendering/server-side-rendering
 import '@ant-design/v5-patch-for-react-19';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
@@ -113,9 +113,10 @@ const Dashboard: React.FC = () => {
       apiService.setAuthToken(token);
       setIsLoading(false);
     }
-  },[token, apiService, storedId])
+  },[token, apiService, storedId]);
 
-  const fetchUsers = async () => {
+  // Use useCallback to memoize the fetchUsers function
+  const fetchUsers = useCallback(async () => {
     if (isLoading || !token) {
       apiService.setAuthToken(token) 
       return;
@@ -135,14 +136,13 @@ const Dashboard: React.FC = () => {
         // console.log("Current token:", token);
       }
     }
-  };
+  }, [isLoading, token, apiService]); // Include all dependencies that fetchUsers uses
 
   useEffect(() => {
     fetchUsers();
-  }, [isLoading, token, apiService]); // dependency apiService does not re-trigger the useEffect on every render because the hook uses memoization (check useApi.tsx in the hooks).
-  // if the dependency array is left empty, the useEffect will trigger exactly once
-  // if the dependency array is left away, the useEffect will run on every state change. Since we do a state change to users in the useEffect, this results in an infinite loop.
-  // read more here: https://react.dev/reference/react/useEffect#specifying-reactive-dependencies
+  }, [fetchUsers]); // Now we only need fetchUsers in the dependency array
+  // The useEffect will re-run whenever fetchUsers changes, which happens when
+  // isLoading, token, or apiService change (as specified in the useCallback dependencies)
 
   return (
     <div className="card-container">
