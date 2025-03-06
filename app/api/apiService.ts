@@ -14,8 +14,8 @@ export class ApiService {
       "Content-Type": "application/json"
     };
 
-    
     if (this.authToken){
+      console.log("Using auth token for request:", this.authToken);
       headers["Authorization"] = this.authToken;
     }
     return headers;

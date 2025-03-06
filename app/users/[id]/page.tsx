@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
+
 import { Button, Card, Table } from "antd";
 import type { TableProps } from "antd"; // antd component library allows imports of types
 // Optionally, you can import a CSS module or file for additional styling:
@@ -98,8 +99,7 @@ const Profile: React.FC = () => {
     const apiService = useApi();
     const [users, setUsers] = useState<User[] | null>(null);
     // useLocalStorage hook example use
-    const { value: userId, set: setUserId, clear: clearUserId } = useLocalStorage<number | null>("userId", null);
-    const [currentUserId, setCurrentUserId] = useState<number|null>(null);
+    const { value: id, set: setId, clear: clearId } = useLocalStorage<number | null>("id", null);
     
     const {
       value: token, // is commented out because we dont need to know the token value for logout
@@ -107,47 +107,90 @@ const Profile: React.FC = () => {
       clear: clearToken, // all we need in this scenario is a method to clear the token
     } = useLocalStorage<string>("token", ""); // if you wanted to select a different token, i.e "lobby", useLocalStorage<string>("lobby", "");
   
-    const handleLogout = async (): Promise<void> => {
-
-      try{
-        if (userId){
-          await apiService.post(`/users/${currentUserId}/logout`, {});
-        } else {
-          console.warn("No user ID available for proper logout");
-        }
-      } catch (error){
-        console.error("Error during logout:", error);
-        // Still clear token and redirect in case of errorss
-      }
-      finally {
-        // Always clear tokens and redirect
+    
+  const handleLogout = async (): Promise<void> => {
+    try {
+      if (id) {
+        
+        
+        // Make the logout request to change status on server
+        const response = await apiService.post(`/users/${id}/logout`, {});
+        console.log("Logout response:", response);
+        
+        // Don't need to refresh users as we're redirecting immediately
+        // Just clear tokens and redirect
         clearToken();
-        clearUserId();
+        clearId();
+        console.log("Local storage cleared");
+        router.push("/login");
+      } else {
+        console.log("Logging out user with ID:", id);
+        console.log("Current token:", token);
+        console.warn("No user ID available for proper logout");
+        // Still redirect to login if id is not available
         router.push("/login");
       }
-      
-      // Clear token using the returned function 'clear' from the hook
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // If there's an error, still redirect to login
+      clearToken();
+      clearId();
+      router.push("/login");
+    }
+  };
+
+
+    useEffect(() => {
+      if (token){
+        apiService.setAuthToken(token);
+        setIsLoading(false);
+      }
+    },[token, apiService, id])
   
+    const fetchUsers = async () => {
+      if (isLoading || !token) {
+        apiService.setAuthToken(token) 
+        return;
+      }
+      try {
+        // apiService.get<User[]> returns the parsed JSON object directly,
+        // thus we can simply assign it to our users variable.
+        const users: User[] = await apiService.get<User[]>("/users");
+        setUsers(users);
+        console.log("Fetched users:", users);
+      } catch (error) {
+        if (error instanceof Error) {
+          alert(`Something went wrong while fetching users:\n${error.message}`);
+          // console.log("Current token:", token);
+        } else {
+          console.error("An unknown error occurred while fetching users.");
+          // console.log("Current token:", token);
+        }
+      }
     };
-    
 
 
   return (
-    
     <div className="card-container">
-      <p>
-        <strong>User ID:</strong>
-      </p>
-      <p>
-        <strong>Username:</strong>
-      </p>
-      <p>
-        <strong>Birthday:</strong>
-      </p>
-      <p>
-        <strong>Creation Date:</strong>
-      </p>
-      
+      <Card
+        title="Get all users from secure endpoint:"
+        loading={!users}
+        className="dashboard-container"
+      >
+        {users && (
+          <>
+            <Table<User>
+              columns={columns}
+            />
+            <Button onClick={handleLogout} type="primary">
+              Logout
+            </Button>
+            <Button onClick={handleUpdateUser} type="primary">
+              Edit Profile
+            </Button>
+          </>
+        )}
+      </Card>
     </div>
   );
   

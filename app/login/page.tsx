@@ -28,8 +28,8 @@ const Login: React.FC = () => {
   } = useLocalStorage<string>("token", ""); // note that the key we are selecting is "token" and the default value we are setting is an empty string
   // if you want to pick a different token, i.e "usertoken", the line above would look as follows: } = useLocalStorage<string>("usertoken", "");
   const {
-    set: setUserId,
-  } = useLocalStorage<number | null>("userId", null);
+    set: setId,
+  } = useLocalStorage<number | null>("id", null);
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -37,9 +37,11 @@ const Login: React.FC = () => {
       const response = await apiService.post<User>("/login", values);
 
       // Use the useLocalStorage hook that returned a setter function (setToken in line 41) to store the token if available
+      console.log("Login response:", response);
       if (response.token) {
         setToken(response.token);
-        setUserId(response.id);
+        console.log("Setting id to:", response.id);
+        setId(response.id);
       }
 
       // Navigate to the user overview

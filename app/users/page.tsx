@@ -65,8 +65,7 @@ const Dashboard: React.FC = () => {
   const apiService = useApi();
   const [users, setUsers] = useState<User[] | null>(null);
   // useLocalStorage hook example use
-  const { value: userId, set: setUserId, clear: clearUserId } = useLocalStorage<number | null>("userId", null);
-  const [currentUserId, setCurrentUserId] = useState<number|null>(null);
+  const { value: id, set: setId, clear: clearId } = useLocalStorage<number | null>("id", null);
   const [isLoading, setIsLoading] = useState(true);
 
   // The hook returns an object with the value and two functions
@@ -78,60 +77,69 @@ const Dashboard: React.FC = () => {
   } = useLocalStorage<string>("token", ""); // if you wanted to select a different token, i.e "lobby", useLocalStorage<string>("lobby", "");
 
   const handleLogout = async (): Promise<void> => {
-    
-    try{
-      if (userId){
-        await apiService.post(`/users/${currentUserId}/logout`, {});
+    try {
+      if (id) {
+        
+        
+        // Make the logout request to change status on server
+        const response = await apiService.post(`/users/${id}/logout`, {});
+        console.log("Logout response:", response);
+        
+        // Don't need to refresh users as we're redirecting immediately
+        // Just clear tokens and redirect
+        clearToken();
+        clearId();
+        console.log("Local storage cleared");
+        router.push("/login");
       } else {
+        console.log("Logging out user with ID:", id);
+        console.log("Current token:", token);
         console.warn("No user ID available for proper logout");
+        // Still redirect to login if id is not available
+        router.push("/login");
       }
-    } catch (error){
+    } catch (error) {
       console.error("Error during logout:", error);
-      // Still clear token and redirect in case of errorss
-    }
-    finally {
-      // Always clear tokens and redirect
+      // If there's an error, still redirect to login
       clearToken();
-      clearUserId();
+      clearId();
       router.push("/login");
     }
-    
-    // Clear token using the returned function 'clear' from the hook
-
   };
 
   useEffect(() => {
+    console.log("Initial id from localStorage:", id);
     if (token){
       apiService.setAuthToken(token);
       setIsLoading(false);
     }
-  },[token, apiService])
+  },[token, apiService, id])
+
+  const fetchUsers = async () => {
+    if (isLoading || !token) {
+      apiService.setAuthToken(token) 
+      return;
+    }
+    try {
+      // apiService.get<User[]> returns the parsed JSON object directly,
+      // thus we can simply assign it to our users variable.
+      const users: User[] = await apiService.get<User[]>("/users");
+      setUsers(users);
+      console.log("Fetched users:", users);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(`Something went wrong while fetching users:\n${error.message}`);
+        // console.log("Current token:", token);
+      } else {
+        console.error("An unknown error occurred while fetching users.");
+        // console.log("Current token:", token);
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (isLoading || !token) {
-        apiService.setAuthToken(token) 
-        return;
-      }
-      try {
-        // apiService.get<User[]> returns the parsed JSON object directly,
-        // thus we can simply assign it to our users variable.
-        const users: User[] = await apiService.get<User[]>("/users");
-        setUsers(users);
-        console.log("Fetched users:", users);
-      } catch (error) {
-        if (error instanceof Error) {
-          alert(`Something went wrong while fetching users:\n${error.message}`);
-          // console.log("Current token:", token);
-        } else {
-          console.error("An unknown error occurred while fetching users.");
-          // console.log("Current token:", token);
-        }
-      }
-    };
-
     fetchUsers();
-  }, [isLoading,token,apiService]); // dependency apiService does not re-trigger the useEffect on every render because the hook uses memoization (check useApi.tsx in the hooks).
+  }, [isLoading, token, apiService]); // dependency apiService does not re-trigger the useEffect on every render because the hook uses memoization (check useApi.tsx in the hooks).
   // if the dependency array is left empty, the useEffect will trigger exactly once
   // if the dependency array is left away, the useEffect will run on every state change. Since we do a state change to users in the useEffect, this results in an infinite loop.
   // read more here: https://react.dev/reference/react/useEffect#specifying-reactive-dependencies
